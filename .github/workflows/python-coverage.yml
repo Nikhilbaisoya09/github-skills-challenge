@@ -1,0 +1,49 @@
+name: Python Coverage
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            python -m pip install -r requirements.txt
+          fi
+
+      - name: Install testing and coverage tools
+        run: |
+          python -m pip install pytest pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest \
+            --cov=src \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=50 \
+            -v | tee pytest-coverage.txt
+
+      - name: Publish coverage report
+        if: always()
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
